@@ -1,0 +1,10 @@
+## ML PLEASE ADD - how was SNPS.modified generated?
+
+## Make masked fasta from fixed SNPs
+module load GCC/9.3.0 BEDTools/2.29.2
+bedtools maskfasta -fi GCF_009819885.1_bCatUst1.pri_genomic.fna -bed SNPS.modified -fo GCF_009819885.1_bCatUst1.pri_genomic.masked.fna
+
+## Create STAR index
+## tools 
+module load GCC/9.3.0 STAR/2.7.7a
+STAR --runThreadN 8 --runMode genomeGenerate --genomeDir /scratch/user/mlouder/ref/bCatUst1_masked_index/ --genomeFastaFiles /scratch/user/mlouder/ref/GCF_009819885.1_bCatUst1.pri_genomic.masked.fna --sjdbGTFfile /scratch/user/mlouder/ref/GCF_009819885.1_bCatUst1.pri_genomic.gff --sjdbGTFtagExonParentTranscript gene --sjdbOverhang 149
