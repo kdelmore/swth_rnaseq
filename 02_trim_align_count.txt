@@ -1,0 +1,11 @@
+## Trim reads with trim_galore
+module load GCCcore/9.3.0 Trim_Galore/0.6.6-Python-3.8.2
+trim_galore --paired  ./AH21K13_HT1/80-AH21K13-HT1-Box-1-D-1_S84_L001_R1_001.fastq.gz ./AH21K13_HT1/80-AH21K13-HT1-Box-1-D-1_S84_L001_R2_001.fastq.gz --cores 4 -o /scratch/user/mlouder/catharus/RNAseq/PURE/READS/AH21K13_HT1/
+
+## Align reads with STAR
+module load GCC/9.3.0 STAR/2.7.7a
+STAR  --genomeDir /scratch/user/mlouder/ref/bCatUst1_masked_index/ --runThreadN 12 --readFilesIn ./AH21K13_HT1/80-AH21K13-HT1-Box-1-D-1_S84_L001_R1_001_val_1.fq.gz  ./AH21K13_HT1/80-AH21K13-HT1-Box-1-D-1_S84_L001_R2_001_val_2.fq.gz --outFileNamePrefix /scratch/user/mlouder/catharus/RNAseq/PURE/READS/AH21K13_HT1/STAR/AH21K13_HT1. --outSAMtype BAM SortedByCoordinate --twopassMode Basic --readFilesCommand zcat
+
+## Count reads per gene with HTSeq-count
+module load GCC/8.3.0  OpenMPI/3.1.4 HTSeq/0.11.2-Python-3.7.4
+htseq-count /scratch/user/mlouder/catharus/RNAseq/PURE/READS/AH21K13_HT1/STAR/AH21K13_HT1.Aligned.sortedByCoord.out.bam  /scratch/user/mlouder/ref/GCF_009819885.1_bCatUst1.pri_genomic.gff --format=bam --stranded=no --order=pos --idattr=gene > /scratch/user/mlouder/catharus/RNAseq/PURE/READS/AH21K13_HT1/STAR/AH21K13_HT1.STAR_counts.txt
