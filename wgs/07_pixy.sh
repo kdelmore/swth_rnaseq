@@ -36,11 +36,11 @@ source activate pixy3
 pixy --stats pi dxy fst \
 --vcf genotype_all_drew_allsites_2_filtered.vcf.gz \
 --populations populations.txt \
---bed_file Misexpression_list_winter.bed \
+--bed_file genes.bed \
 --output_prefix genes_dxy_fst
 
 pixy --stats pi dxy fst \
 --vcf genotype_all_drew_allsites_2_filtered.vcf.gz \
 --populations populations.txt \
---bed_file Misexpression_list_winter_updown.bed \
+--bed_file genes_updown.bed \
 --output_prefix genes_dxy_fst_updown
