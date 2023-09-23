@@ -1,4 +1,6 @@
-## modify file with SNPs that meet cutoff (FST > 0.1, 0.2 and 0.9 run)
+## modify file with SNPs that meet cutoff
+## run for FST > 0.1, 0.2 and 0.9
+## example here is for 0.1
 cat ref.01.fst | awk '{print$1,$2-1,$2}' | 's/ /  /g' > ref.01.bed
 
 ## make masked fasta from fixed SNPs
@@ -7,4 +9,10 @@ bedtools maskfasta -fi GCF_009819885.1_bCatUst1.pri_genomic.fna -bed ref.01.bed 
 
 ## create STAR index
 module load GCC/9.3.0 STAR/2.7.7a
-STAR --runThreadN 8 --runMode genomeGenerate --genomeDir /scratch/user/mlouder/ref/bCatUst1_masked_index/ --genomeFastaFiles /scratch/user/mlouder/ref/GCF_009819885.1_bCatUst1.pri_genomic.masked.fna --sjdbGTFfile /scratch/user/mlouder/ref/GCF_009819885.1_bCatUst1.pri_genomic.gff --sjdbGTFtagExonParentTranscript gene --sjdbOverhang 149
+STAR --runThreadN 8 \
+--runMode genomeGenerate \
+--genomeDir /scratch/user/delmore/rnaseq/ref_09/ \
+--genomeFastaFiles /scratch/user/delmore/rnaseq/ref_09/GCF_009819885.1_bCatUst1.pri_genomic.masked09.fna \
+--sjdbGTFfile /scratch/user/delmore/rnaseq/ref_09/GCF_009819885.1_bCatUst1.pri_genomic.gff \
+--sjdbGTFtagExonParentTranscript gene \
+--sjdbOverhang 149
