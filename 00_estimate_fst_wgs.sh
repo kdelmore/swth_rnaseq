@@ -1,4 +1,6 @@
 #!/bin/bash
+## follow steps 01-06 in wgs/ to generate input vcf here
+## author: sblain
 
 #SBATCH --job-name=ref_concat
 #SBATCH --time=48:00:00
