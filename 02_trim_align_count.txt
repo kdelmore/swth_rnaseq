@@ -43,7 +43,7 @@ module load GCC/9.3.0 STAR/2.7.7a
 STAR --genomeDir \$ref \
 --runThreadN 12 \
 --readFilesIn \$trim/"$prefix2"_R1_001_val_1.fq.gz \
-\$trim \$trim/"$prefix2"_R2_001_val_2.fq.gz \
+\$trim/"$prefix2"_R2_001_val_2.fq.gz \
 --outFileNamePrefix \$bam/"$prefix3". \
 --outSAMtype BAM \
 SortedByCoordinate \
