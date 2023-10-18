@@ -27,12 +27,27 @@ join -t $'\t' -j2 <(sort -k2 $pre.SNP.ASE.RNAFixed.ALL.output.table) <(sort -k2 
 ###Reading in allelic counts summary file per SNP for each hybrid#####
 library(tidyverse)
 p <- read.csv('CNH1.SNPs.txt', sep = "\t", header = TRUE)
+head(p)
+#    gene           id  group                   snp ref total
+#1 TTC37 BH24K08.CNH1 Spring   NC_046261.1:1001680   8    27
+#2 TTC37 BH24K08.CNH1 Spring   NC_046261.1:1002263  12    24
+#3 ARRDC3 BH24K08.CNH1 Spring NW_022679140.1:101030  24    40
+#4 ARRDC3 BH24K08.CNH1 Spring NW_022679140.1:101221  23    44
+#5 ARSK BH24K08.CNH1 Spring   NC_046261.1:1014009  12    21
+#6 ARSK BH24K08.CNH1 Spring   NC_046261.1:1014053  11    20
 
 ###sumarizing by migratory state (Group), sample (id), and gene
 ###calc ASE ratio (ref/total counts), and Log Fold Change (LFC = log2(ref/alt))
 ###filter for at least 10 counts per individual
-agg_tbl <- p %>% group_by(group,id, gene) %>%
-  summarise(ref=sum(ref),total=sum(total), alt = sum(total) - sum(ref)) %>% filter(total >=10)
+agg_tbl <- p %>% group_by(group,id, gene) %>% summarise(ref=sum(ref),total=sum(total), alt = sum(total) - sum(ref)) %>% filter(total >=10)
+head(agg_tbl)
+#  group  id           gene       ref total   alt
+#1 Spring AH13K01.CNH1 ABCA1      232   569   337
+#2 Spring AH13K01.CNH1 ABHD17B     30    58    28
+#3 Spring AH13K01.CNH1 ABHD5       13    34    21
+#4 Spring AH13K01.CNH1 ACER2       16    50    34
+#5 Spring AH13K01.CNH1 ADAMTSL1    36   104    68
+#6 Spring AH13K01.CNH1 ADGRV1     412  1260   848
 
 ###code for alternate and reference counts per individual to get a gene-wide log2fold change (filter for at least 3 samples in each migratory state)
 ###Log2fold change between coastal and inland alleles  ####
