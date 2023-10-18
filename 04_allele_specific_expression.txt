@@ -1,0 +1,41 @@
+##########Calling SNPs in hybrids from Star aligned bams -- example below#########
+
+pre='BH19K08-CNH1'
+input='BH19K08-CNH1.Aligned.sortedByCoord.out.bam'
+
+###
+java -jar "$EBROOTPICARD"/picard.jar AddOrReplaceReadGroups TMP_DIR=./tmp I= $input O=$pre.sortrg.bam MAX_RECORDS_IN_RAM=5000000 SORT_ORDER=coordinate RGID=$pre RGLB=test RGPL=ILLUMINA RGPU=test RGSM=$pre CREATE_INDEX=True 2> $pre.addRG.log
+
+java -Xmx7g -jar "$EBROOTPICARD"/picard.jar MarkDuplicates TMP_DIR=`pwd`/tmp INPUT=$pre.sortrg.bam MAX_RECORDS_IN_RAM=5000000 OUTPUT=$pre.duprem.bam M=$pre.duprem.log REMOVE_DUPLICATES=true
+
+gatk SplitNCigarReads -R $ref --tmp-dir ./tmp -I $pre.duprem.bam -O $pre.duprem.split.bam
+
+gatk HaplotypeCaller -I $pre.duprem.split.bam -O $pre.haplo.SNP.vcf.gz -L /scratch/user/mlouder/catharus/Hybrid_variants/SNPs.interval_list -R $ref  -stand-call-conf 20 -dont-use-soft-clipped-bases -ERC GVCF
+
+gatk GenotypeGVCFs -R $ref -V $pre.haplo.SNP.vcf.gz --max-alternate-alleles 4 --standard-min-confidence-threshold-for-calling 30 -O $pre.genotype_SNP.vcf.gz -all-sites
+
+gatk VariantFiltration --R $ref --V $pre.genotype_SNP.vcf.gz --window 35 --cluster 3 --filter-name "DP" --filter "DP < 5" --filter-name "FS" --filter "FS > 30.0"  --filter-name "QD" --filter "QD < 2.0" -O $pre.genotype_SNP.filtered.vcf
+
+gatk SelectVariants -V $pre.genotype_SNP.filtered.vcf --exclude-filtered -O $pre.genotype_SNP.filtered.PASS.vcf
+
+######ASERreadcounter######
+gatk ASEReadCounter -R $ref -I $pre.duprem.split.bam -V $pre.genotype_SNP.filtered.PASS.vcf -O $pre.SNP.ASE.RNAFixed.ALL.output.table --disable-sequence-dictionary-validation
+
+####Joining ASEReadcount output with gene .bed file for gene names/windows#####
+join -t $'\t' -j2 <(sort -k2 $pre.SNP.ASE.RNAFixed.ALL.output.table) <(sort -k2 /scratch/user/mlouder/catharus/Pure_variants/CNH1/Fixed.CNH1.uniq.geneID.bed) > $pre.SNP.ASE.RNAFixed.ALL.output.genes.table.tsv
+
+###Reading in allelic counts summary file per SNP for each hybrid#####
+library(tidyverse)
+p <- read.csv('CNH1.SNPs.txt', sep = "\t", header = TRUE)
+
+###sumarizing by migratory state (Group), sample (id), and gene
+###calc ASE ratio (ref/total counts), and Log Fold Change (LFC = log2(ref/alt))
+###filter for at least 10 counts per individual
+agg_tbl <- p %>% group_by(group,id, gene) %>%
+  summarise(ref=sum(ref),total=sum(total), alt = sum(total) - sum(ref)) %>% filter(total >=10)
+
+###code for alternate and reference counts per individual to get a gene-wide log2fold change (filter for at least 3 samples in each migratory state)
+###Log2fold change between coastal and inland alleles  ####
+LFC_sssp_tbl_comb <- agg_tbl %>% group_by(gene) %>%
+summarise(LFC_avg=log2(mean(ref)/mean(alt)), num_samples=n())  %>%
+arrange(gene) %>% filter(num_samples > 2)
