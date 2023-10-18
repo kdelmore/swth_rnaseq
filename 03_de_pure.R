@@ -1,4 +1,4 @@
-0######DESeq code below for calling differantial expression within a tissue for pure forms samples -- example below from CNH ####
+######DESeq code below for calling differantial expression within a tissue for pure forms samples -- example below from CNH ####
 library("DESeq2")
 library(edgeR)
 library(tidyverse)
