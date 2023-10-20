@@ -18,13 +18,33 @@ gatk VariantFiltration --R $ref --V $pre.genotype_SNP.vcf.gz --window 35 --clust
 
 gatk SelectVariants -V $pre.genotype_SNP.filtered.vcf --exclude-filtered -O $pre.genotype_SNP.filtered.PASS.vcf
 
+
+####Counting Alleles in hybrids######
 ######ASERreadcounter######
 gatk ASEReadCounter -R $ref -I $pre.duprem.split.bam -V $pre.genotype_SNP.filtered.PASS.vcf -O $pre.SNP.ASE.RNAFixed.ALL.output.table --disable-sequence-dictionary-validation
 
 ####Joining ASEReadcount output with gene .bed file for gene names/windows#####
 join -t $'\t' -j2 <(sort -k2 $pre.SNP.ASE.RNAFixed.ALL.output.table) <(sort -k2 /scratch/user/mlouder/catharus/Pure_variants/CNH1/Fixed.CNH1.uniq.geneID.bed) > $pre.SNP.ASE.RNAFixed.ALL.output.genes.table.tsv
 
-###Reading in allelic counts summary file per SNP for each hybrid#####
+
+####merge allele count files together#####
+
+file_names <- dir("./*SNP.ASE.RNAFixed.ALL.output.genes.table.tsv")
+
+n <- length(file_names)
+datalist <- vector(mode="list", length=n)
+for(i in 1:n) {
+    cat("importing file", i, ":", file_names[i], "\n")
+    datalist[[i]] <- read.csv(file_names[i], sep = "\t", header = "FALSE")
+}
+
+names(datalist) <- file_names
+
+CNH1.SNPs <- data.table::rbindlist(datalist, idcol=TRUE)
+
+
+
+###Reading in allelic counts summary file per SNP for each hybrid -- example in CNH#####
 library(tidyverse)
 p <- read.csv('CNH1.SNPs.txt', sep = "\t", header = TRUE)
 head(p)
@@ -36,7 +56,7 @@ head(p)
 #5 ARSK BH24K08.CNH1 Spring   NC_046261.1:1014009  12    21
 #6 ARSK BH24K08.CNH1 Spring   NC_046261.1:1014053  11    20
 
-###sumarizing by migratory state (Group), sample (id), and gene
+###summarizing by migratory state (Group), sample (id), and gene
 ###calc ASE ratio (ref/total counts), and Log Fold Change (LFC = log2(ref/alt))
 ###filter for at least 10 counts per individual
 agg_tbl <- p %>% group_by(group,id, gene) %>% summarise(ref=sum(ref),total=sum(total), alt = sum(total) - sum(ref)) %>% filter(total >=10)
@@ -51,6 +71,41 @@ head(agg_tbl)
 
 ###code for alternate and reference counts per individual to get a gene-wide log2fold change (filter for at least 3 samples in each migratory state)
 ###Log2fold change between coastal and inland alleles  ####
-LFC_sssp_tbl_comb <- agg_tbl %>% group_by(gene) %>%
+LFC_sssp_avg <- agg_tbl %>% group_by(gene) %>%
 summarise(LFC_avg=log2(mean(ref)/mean(alt)), num_samples=n())  %>%
 arrange(gene) %>% filter(num_samples > 2)
+
+> head(LFC_sssp_avg)
+# A tibble: 6 × 3
+  gene    LFC_avg num_samples
+  <chr>     <dbl>       <int>
+1 AASDH    -0.189           8
+2 ABCA1    -0.433           7
+3 ABCD4     0.265           7
+4 ABHD17B   0.305           7
+5 ABHD5    -0.165           9
+6 ACER2    -0.159           7
+
+###merge above table with pure form subspecies LFC to compare hybrids and pure forms -- e.g. Fig 4a #######
+
+
+#####code for GxE LFC from hybrid allele counts####
+LFC_GxE_tbl <- agg_tbl %>% group_by(gene,group) %>%
+ summarise(LFC=(mean(ref)/mean(alt)), num_samples=n())  %>% arrange(gene) %>% filter(num_samples > 2)
+
+LFC_GxE_tbl_comb  <- LFC_GxE_tbl %>% group_by(gene) %>%
+  summarise(LFC_GxE = log2(LFC[group == "Winter"] / LFC[group == "Spring"]))
+
+head(LFC_GxE_tbl_comb)
+# A tibble: 6 × 2
+# Groups:   gene [6]
+  gene  LFC_GxE
+  <chr>   <dbl>
+1 AASDH -0.164 
+2 ABCD4  0.194 
+3 ABHD5 -0.0146
+4 ADNP2 -0.212 
+5 AFG1L -0.678 
+6 AGMO  -0.340 
+
+###merge above table with pure form GxE LFC to compare hybrids and pure forms -- e.g. Fig 4b #######
